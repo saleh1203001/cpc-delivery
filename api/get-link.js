@@ -1,37 +1,38 @@
-const Stripe = require('stripe');
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-module.exports = async (req, res) => {
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+module.exports = async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET");
 
-  const invoiceId = req.query.invoice;
-  if (!invoiceId) return res.status(400).json({ error: 'invoice parameter required' });
-
-  try {
-    // Get delivery data from Upstash Redis
-    const redisUrl = process.env.KV_REST_API_URL;
-    const redisToken = process.env.KV_REST_API_TOKEN;
-
-    const redisRes = await fetch(redisUrl + '/get/delivery:' + invoiceId, {
-      headers: { Authorization: 'Bearer ' + redisToken }
-    });
-    const redisData = await redisRes.json();
-
-    if (!redisData.result) return res.status(404).json({ error: 'Delivery not found' });
-
-    const delivery = JSON.parse(redisData.result);
-
-    // Double-check with Stripe that invoice is paid
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const invoice = await stripe.invoices.retrieve(invoiceId);
-
-    if (invoice.status !== 'paid') {
-      return res.status(403).json({ error: 'Invoice not yet paid' });
-    }
-
-    // Only return download link if payment confirmed
-    res.status(200).json({ downloadLink: delivery.downloadLink });
-  } catch (err) {
-    console.error('Get link error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
+
+  const { invoice } = req.query;
+  if (!invoice) {
+    return res.status(400).json({ error: "invoice parameter required" });
+  }
+
+  // Everything lives in Stripe — single source of truth
+  let stripeInvoice;
+  try {
+    stripeInvoice = await stripe.invoices.retrieve(invoice);
+  } catch (err) {
+    return res.status(404).json({ error: "Invoice not found" });
+  }
+
+  // Verify payment status directly from Stripe
+  if (stripeInvoice.status !== "paid") {
+    return res.status(403).json({ error: "Payment not completed" });
+  }
+
+  const meta = stripeInvoice.metadata || {};
+  if (!meta.downloadLink) {
+    return res.status(404).json({ error: "No download link configured" });
+  }
+
+  return res.status(200).json({
+    downloadLink: meta.downloadLink,
+    projectName: meta.projectName || "",
+  });
 };
