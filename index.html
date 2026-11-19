@@ -1,1 +1,86 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>File Delivery - Clipping Path Center</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f9fa;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e5e7eb;padding:20px 0;text-align:center}
+.header h1{font-size:20px;font-weight:600;color:#111}
+.header .brand{font-size:13px;color:#888;margin-top:4px}
+.container{max-width:720px;margin:40px auto;padding:0 20px}
+.card{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08);padding:32px;margin-bottom:24px}
+.project-info{text-align:center;margin-bottom:8px}
+.project-info h2{font-size:22px;font-weight:600;color:#111}
+.project-info .client-name{font-size:14px;color:#888;margin-top:4px}
+.amount-display{text-align:center;padding:24px 0;border-top:1px solid #f0f0f0;border-bottom:1px solid #f0f0f0;margin:20px 0}
+.amount-display .label{font-size:13px;color:#888;text-transform:uppercase;letter-spacing:0.5px}
+.amount-display .amount{font-size:36px;font-weight:700;color:#111;margin-top:4px}
+.preview-section h3{font-size:15px;font-weight:600;color:#555;margin-bottom:16px}
+.preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;-webkit-user-select:none;user-select:none}
+.preview-item{position:relative;border-radius:8px;overflow:hidden;aspect-ratio:4/3;background:#f0f0f0}
+.preview-item img{width:100%;height:100%;object-fit:cover;filter:blur(20px) brightness(0.9);transform:scale(1.1);user-select:none;-webkit-user-drag:none;pointer-events:none}
+.preview-item .lock-overlay{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.15)}
+.preview-item .lock-overlay svg{width:32px;height:32px;fill:rgba(255,255,255,0.7)}
+.status-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500}
+.status-badge.unpaid{background:#fff3cd;color:#856404}
+.status-badge.paid{background:#d4edda;color:#155724}
+.status-badge .dot{width:8px;height:8px;border-radius:50%}
+.status-badge.unpaid .dot{background:#ffc107}
+.status-badge.paid .dot{background:#28a745}
+.pay-btn{display:block;width:100%;padding:16px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;transition:background 0.2s;text-align:center;text-decoration:none;margin-top:24px}
+.pay-btn:hover{background:#1d4ed8}
+.download-section{text-align:center;padding:32px 0 8px}
+.download-section .success-icon{width:56px;height:56px;background:#d4edda;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.download-section .success-icon svg{width:28px;height:28px;fill:#28a745}
+.download-section h3{font-size:18px;font-weight:600;color:#155724}
+.download-section p{font-size:14px;color:#666;margin:8px 0 20px}
+.download-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:#28a745;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;text-decoration:none;transition:background 0.2s}
+.download-btn:hover{background:#218838}
+.download-btn svg{width:20px;height:20px;fill:currentColor}
+.preview-item.unlocked img{filter:none;transform:none;pointer-events:auto}
+.preview-item.unlocked .lock-overlay{display:none}
+.loading{text-align:center;padding:60px 0;color:#888}
+.loading .spinner{width:32px;height:32px;border:3px solid #e5e7eb;border-top-color:#2563eb;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-state{text-align:center;padding:60px 0;color:#dc3545}
+.footer{text-align:center;padding:32px 0;font-size:12px;color:#aaa}
+.footer a{color:#888;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="header"><h1>File Delivery</h1><div class="brand">Clipping Path Center</div></div>
+<div class="container" id="app">
+<div class="loading" id="loading-state"><div class="spinner"></div><p>Loading delivery details...</p></div>
+<div class="error-state" id="error-state" style="display:none"><p id="error-message">Something went wrong.</p></div>
+<div id="delivery-content" style="display:none">
+<div class="card">
+<div class="project-info"><h2 id="project-name"></h2><div class="client-name" id="client-name"></div><div style="margin-top:12px"><span class="status-badge" id="status-badge"><span class="dot"></span><span id="status-text"></span></span></div></div>
+<div class="amount-display" id="amount-section"><div class="label">Amount Due</div><div class="amount" id="amount-text"></div></div>
+<div class="preview-section" id="preview-section" style="display:none"><h3>Preview</h3><div class="preview-grid" id="preview-grid" oncontextmenu="return false" ondragstart="return false"></div></div>
+<a class="pay-btn" id="pay-btn" style="display:none" target="_blank" rel="noopener">Complete Payment</a>
+<div class="download-section" id="download-section" style="display:none">
+<div class="success-icon"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></div>
+<h3>Payment Received!</h3><p>Your files are ready for download.</p>
+<a class="download-btn" id="download-btn" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>Download Files</a>
+</div></div></div></div>
+<div class="footer"><a href="https://clippingpathcenter.com" target="_blank">clippingpathcenter.com</a></div>
+<script>
+document.addEventListener('contextmenu',e=>{if(e.target.closest('.preview-grid'))e.preventDefault()});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&['u','s'].includes(e.key.toLowerCase()))e.preventDefault()});
+const params=new URLSearchParams(window.location.search);const invoiceId=params.get('invoice');
+if(!invoiceId){showError('No delivery ID provided.')}else{loadDelivery()}
+async function loadDelivery(){try{const r=await fetch('/api/check-status?invoice='+encodeURIComponent(invoiceId));if(!r.ok){r.status===404?showError('Delivery not found. Check the link.'):showError('Unable to load. Try again.');return}renderDelivery(await r.json())}catch(e){showError('Connection error. Check internet.')}}
+function renderDelivery(d){document.getElementById('loading-state').style.display='none';document.getElementById('delivery-content').style.display='block';document.getElementById('project-name').textContent=d.projectName||'Your Delivery';document.getElementById('client-name').textContent=d.clientName?'Prepared for '+d.clientName:'';const b=document.getElementById('status-badge'),s2=document.getElementById('status-text');if(d.paid){b.className='status-badge paid';s2.textContent='Paid'}else{b.className='status-badge unpaid';s2.textContent='Awaiting Payment'}
+if(d.amountDue!=null){document.getElementById('amount-text').textContent=new Intl.NumberFormat('en-US',{style:'currency',currency:(d.currency||'usd').toUpperCase()}).format(d.amountDue/100)}else{document.getElementById('amount-section').style.display='none'}
+if(d.previewImages&&d.previewImages.length>0){document.getElementById('preview-section').style.display='block';const g=document.getElementById('preview-grid');g.innerHTML='';d.previewImages.forEach(u=>{const i=document.createElement('div');i.className='preview-item'+(d.paid?' unlocked':'');i.innerHTML='<img src="'+escapeHtml(u)+'" alt="Preview" loading="lazy" draggable="false"/><div class="lock-overlay"><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></div>';g.appendChild(i)})}
+if(d.paid){fetchDownloadLink()}else{if(d.hostedInvoiceUrl){const p=document.getElementById('pay-btn');p.href=d.hostedInvoiceUrl;p.style.display='block'}startPolling()}}
+async function fetchDownloadLink(){try{const r=await fetch('/api/get-link?invoice='+encodeURIComponent(invoiceId));if(r.ok){const d=await r.json();document.getElementById('download-btn').href=d.downloadLink;document.getElementById('download-section').style.display='block';document.getElementById('pay-btn').style.display='none';document.getElementById('amount-section').style.display='none';document.querySelectorAll('.preview-item').forEach(i=>i.classList.add('unlocked'))}}catch(e){console.error('Error:',e)}}
+let pollInterval;function startPolling(){pollInterval=setInterval(async()=>{try{const r=await fetch('/api/check-status?invoice='+encodeURIComponent(invoiceId));if(r.ok){const d=await r.json();if(d.paid){clearInterval(pollInterval);document.getElementById('status-badge').className='status-badge paid';document.getElementById('status-text').textContent='Paid';fetchDownloadLink()}}}catch(e){}},10000)}
+function showError(m){document.getElementById('loading-state').style.display='none';document.getElementById('error-state').style.display='block';document.getElementById('error-message').textContent=m}
+function escapeHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+</script>
+</body>
+</html>
