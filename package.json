@@ -4,7 +4,6 @@
   "description": "Secure file delivery with Stripe payment verification for Clipping Path Center",
   "private": true,
   "dependencies": {
-    "stripe": "^14.0.0",
-    "@vercel/kv": "^2.0.0"
+    "stripe": "^14.0.0"
   }
 }
