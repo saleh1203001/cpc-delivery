@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPC Delivery - Admin</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #1a1a1a; min-height: 100vh; }
+  .header { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 16px 0; text-align: center; }
+  .header h1 { font-size: 20px; font-weight: 700; }
+  .header p { font-size: 13px; color: #666; margin-top: 2px; }
+  .container { max-width: 600px; margin: 32px auto; padding: 0 16px; }
+  .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 28px; margin-bottom: 24px; }
+  .card h2 { font-size: 17px; font-weight: 600; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #eee; }
+  label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 6px; }
+  label .hint { font-weight: 400; color: #888; }
+  input, textarea { width: 100%; padding: 10px 12px; border: 1px solid #d0d0d0; border-radius: 8px; font-size: 14px; font-family: inherit; transition: border-color 0.2s; }
+  input:focus, textarea:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+  textarea { resize: vertical; min-height: 80px; }
+  .field { margin-bottom: 18px; }
+  .field:last-child { margin-bottom: 0; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 20px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: #2563eb; color: #fff; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-primary:disabled { background: #93b4f5; cursor: not-allowed; }
+  .btn-copy { background: #f0f0f0; color: #333; border: 1px solid #d0d0d0; margin-top: 10px; }
+  .btn-copy:hover { background: #e4e4e4; }
+  .result { display: none; margin-top: 24px; padding: 20px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; }
+  .result.error { background: #fef2f2; border-color: #fecaca; }
+  .result h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .result.error h3 { color: #dc2626; }
+  .result .url { word-break: break-all; font-size: 13px; padding: 10px; background: #fff; border: 1px solid #d1fae5; border-radius: 6px; margin-top: 8px; color: #166534; font-family: monospace; }
+  .result.error .url { border-color: #fecaca; color: #991b1b; background: #fff5f5; }
+  .copied { font-size: 12px; color: #16a34a; margin-top: 6px; display: none; text-align: center; }
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .toggle-key { font-size: 12px; color: #2563eb; cursor: pointer; margin-left: 8px; }
+  .divider { height: 1px; background: #eee; margin: 24px 0; }
+  .recent { margin-top: 12px; }
+  .recent-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f8f8f8; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
+  .recent-item .project { font-weight: 600; }
+  .recent-item .client { color: #666; }
+  .recent-item a { color: #2563eb; text-decoration: none; font-weight: 500; }
+  .recent-item a:hover { text-decoration: underline; }
+  .empty { text-align: center; color: #999; font-size: 13px; padding: 16px; }
+  .footer { text-align: center; padding: 24px; color: #999; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>&#128230; CPC Delivery Admin</h1>
+  <p>Create secure file deliveries for clients</p>
+</div>
+
+<div class="container">
+  <div class="card">
+    <h2>Create New Delivery</h2>
+    <form id="deliveryForm">
+      <div class="field">
+        <label>Admin Key <span class="toggle-key" onclick="toggleKey()">(show/hide)</span></label>
+        <input type="password" id="adminKey" placeholder="Enter your admin key" required>
+      </div>
+      <div class="divider"></div>
+      <div class="field">
+        <label>Stripe Invoice ID <span class="hint">— starts with in_</span></label>
+        <input type="text" id="invoiceId" placeholder="in_1AbCdEfGhIjKlMn..." required>
+      </div>
+      <div class="field">
+        <label>Download Link <span class="hint">— Google Drive, WeTransfer, etc.</span></label>
+        <input type="url" id="downloadLink" placeholder="https://drive.google.com/file/d/..." required>
+      </div>
+      <div class="field">
+        <label>Client Name</label>
+        <input type="text" id="clientName" placeholder="John Smith">
+      </div>
+      <div class="field">
+        <label>Project Name</label>
+        <input type="text" id="projectName" placeholder="Product Photo Editing - 50 Images">
+      </div>
+      <div class="field">
+        <label>Preview Image URLs <span class="hint">— one per line (optional)</span></label>
+        <textarea id="previewImages" placeholder="https://example.com/preview1.jpg"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" id="submitBtn">Create Delivery</button>
+    </form>
+    <div class="result" id="result">
+      <h3 id="resultTitle"></h3>
+      <div class="url" id="resultUrl"></div>
+      <button class="btn btn-copy" onclick="copyUrl()">&#128203; Copy Client Link</button>
+      <div class="copied" id="copiedMsg">Copied to clipboard!</div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Recent Deliveries</h2>
+    <div id="recentList" class="recent">
+      <div class="empty">No deliveries created yet in this session</div>
+    </div>
+  </div>
+</div>
+<div class="footer">Clipping Path Center &middot; Secure File Delivery</div>
+<script>
+  const savedKey = localStorage.getItem('cpc_admin_key');
+  if (savedKey) document.getElementById('adminKey').value = savedKey;
+  function toggleKey() {
+    const input = document.getElementById('adminKey');
+    input.type = input.type === 'password' ? 'text' : 'password';
+  }
+  const recentDeliveries = [];
+  document.getElementById('deliveryForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const result = document.getElementById('result');
+    const adminKey = document.getElementById('adminKey').value.trim();
+    const invoiceId = document.getElementById('invoiceId').value.trim();
+    const downloadLink = document.getElementById('downloadLink').value.trim();
+    const clientName = document.getElementById('clientName').value.trim();
+    const projectName = document.getElementById('projectName').value.trim();
+    const previewText = document.getElementById('previewImages').value.trim();
+    const previewImages = previewText ? previewText.split('\n').map(u => u.trim()).filter(u => u) : [];
+    localStorage.setItem('cpc_admin_key', adminKey);
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Creating...';
+    result.style.display = 'none';
+    try {
+      const res = await fetch('/api/create-delivery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify({ invoiceId, downloadLink, previewImages, clientName, projectName })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        result.className = 'result';
+        document.getElementById('resultTitle').textContent = 'Delivery created successfully!';
+        document.getElementById('resultUrl').textContent = data.clientPageUrl;
+        result.style.display = 'block';
+        recentDeliveries.unshift({ projectName: projectName || invoiceId, clientName, url: data.clientPageUrl });
+        renderRecent();
+        document.getElementById('invoiceId').value = '';
+        document.getElementById('downloadLink').value = '';
+        document.getElementById('clientName').value = '';
+        document.getElementById('projectName').value = '';
+        document.getElementById('previewImages').value = '';
+      } else {
+        result.className = 'result error';
+        document.getElementById('resultTitle').textContent = 'Error';
+        document.getElementById('resultUrl').textContent = data.error || 'Something went wrong';
+        result.style.display = 'block';
+      }
+    } catch (err) {
+      result.className = 'result error';
+      document.getElementById('resultTitle').textContent = 'Network Error';
+      document.getElementById('resultUrl').textContent = err.message;
+      result.style.display = 'block';
+    }
+    btn.disabled = false;
+    btn.innerHTML = 'Create Delivery';
+  });
+  function copyUrl() {
+    const url = document.getElementById('resultUrl').textContent;
+    navigator.clipboard.writeText(url).then(() => {
+      const msg = document.getElementById('copiedMsg');
+      msg.style.display = 'block';
+      setTimeout(() => msg.style.display = 'none', 2000);
+    });
+  }
+  function renderRecent() {
+    const list = document.getElementById('recentList');
+    if (recentDeliveries.length === 0) {
+      list.innerHTML = '<div class="empty">No deliveries created yet in this session</div>';
+      return;
+    }
+    list.innerHTML = recentDeliveries.map(d =>
+      '<div class="recent-item"><div><span class="project">' + esc(d.projectName) + '</span>' +
+      (d.clientName ? '<br><span class="client">' + esc(d.clientName) + '</span>' : '') +
+      '</div><a href="' + esc(d.url) + '" target="_blank">Open \u2192</a></div>'
+    ).join('');
+  }
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+</script>
+</body>
+</html>
