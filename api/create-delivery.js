@@ -1,40 +1,50 @@
-const Stripe = require('stripe');
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-module.exports = async (req, res) => {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+module.exports = async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-  const adminKey = req.headers['x-admin-key'];
+  const adminKey = req.headers["x-admin-key"];
   if (!adminKey || adminKey !== process.env.ADMIN_KEY) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
+  const { invoiceId, downloadLink, previewImages, clientName, projectName } =
+    req.body;
+
+  if (!invoiceId || !downloadLink) {
+    return res
+      .status(400)
+      .json({ error: "invoiceId and downloadLink are required" });
+  }
+
+  // Store delivery data in the Stripe invoice metadata (no DB needed)
   try {
-    const { invoiceId, downloadLink, previewImages, clientName, projectName } = req.body;
-    if (!invoiceId || !downloadLink) {
-      return res.status(400).json({ error: 'invoiceId and downloadLink are required' });
-    }
-
-    // Store in Upstash Redis via REST API
-    const redisUrl = process.env.KV_REST_API_URL;
-    const redisToken = process.env.KV_REST_API_TOKEN;
-
-    const data = JSON.stringify({
-      invoiceId, downloadLink, previewImages: previewImages || [],
-      clientName: clientName || '', projectName: projectName || '',
-      paid: false, createdAt: new Date().toISOString()
+    await stripe.invoices.update(invoiceId, {
+      metadata: {
+        downloadLink,
+        previewImages: JSON.stringify(previewImages || []),
+        clientName: clientName || "",
+        projectName: projectName || "",
+        cpc_delivery: "true",
+      },
     });
-
-    const redisRes = await fetch(redisUrl + '/set/delivery:' + invoiceId, {
-      method: 'POST', headers: { Authorization: 'Bearer ' + redisToken },
-      body: JSON.stringify([data])
-    });
-
-    if (!redisRes.ok) throw new Error('Redis error: ' + redisRes.status);
-
-    const clientPageUrl = 'https://cpc-delivery.vercel.app/?invoice=' + encodeURIComponent(invoiceId);
-    res.status(200).json({ success: true, clientPageUrl });
   } catch (err) {
-    console.error('Create delivery error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    return res
+      .status(400)
+      .json({ error: "Failed to update invoice: " + err.message });
   }
+
+  const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : `https://${req.headers.host}`;
+
+  const clientPageUrl = `${baseUrl}/?invoice=${invoiceId}`;
+
+  return res.status(200).json({
+    success: true,
+    clientPageUrl,
+    invoiceId,
+  });
 };
