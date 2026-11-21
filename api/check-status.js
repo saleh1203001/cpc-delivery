@@ -13,7 +13,6 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "invoice parameter required" });
   }
 
-  // Everything lives in Stripe — no database needed
   let stripeInvoice;
   try {
     stripeInvoice = await stripe.invoices.retrieve(invoice);
@@ -26,7 +25,6 @@ module.exports = async function handler(req, res) {
 
   const meta = stripeInvoice.metadata || {};
 
-  // Only return deliveries we've set up (have cpc_delivery flag)
   if (meta.cpc_delivery !== "true") {
     return res.status(404).json({ error: "Delivery not found" });
   }
@@ -43,6 +41,7 @@ module.exports = async function handler(req, res) {
     clientName: meta.clientName || "",
     projectName: meta.projectName || "",
     previewImages,
+    hasDropboxPreviews: !!meta.dropboxFolder,
     paid: stripeInvoice.status === "paid",
     hostedInvoiceUrl: stripeInvoice.hosted_invoice_url,
     amountDue: stripeInvoice.amount_due,
