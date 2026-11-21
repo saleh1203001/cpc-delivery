@@ -61,29 +61,45 @@
         <label>Admin Key <span class="toggle-key" onclick="toggleKey()">(show/hide)</span></label>
         <input type="password" id="adminKey" placeholder="Enter your admin key" required>
       </div>
+
       <div class="divider"></div>
+
       <div class="field">
         <label>Stripe Invoice ID <span class="hint">— starts with in_</span></label>
         <input type="text" id="invoiceId" placeholder="in_1AbCdEfGhIjKlMn..." required>
       </div>
+
       <div class="field">
-        <label>Download Link <span class="hint">— Google Drive, WeTransfer, etc.</span></label>
-        <input type="url" id="downloadLink" placeholder="https://drive.google.com/file/d/..." required>
+        <label>Download Link <span class="hint">— Dropbox folder link, Google Drive, etc.</span></label>
+        <input type="url" id="downloadLink" placeholder="https://www.dropbox.com/scl/fo/..." required>
       </div>
+
       <div class="field">
         <label>Client Name</label>
         <input type="text" id="clientName" placeholder="John Smith">
       </div>
+
       <div class="field">
         <label>Project Name</label>
         <input type="text" id="projectName" placeholder="Product Photo Editing - 50 Images">
       </div>
+
       <div class="field">
-        <label>Preview Image URLs <span class="hint">— one per line (optional)</span></label>
-        <textarea id="previewImages" placeholder="https://example.com/preview1.jpg"></textarea>
+        <label>Dropbox Folder Path <span class="hint">— auto-generates all previews</span></label>
+        <input type="text" id="dropboxFolder" placeholder="/Client Projects/John Smith - Product Photos">
+        <div style="font-size:11px;color:#888;margin-top:4px;">The exact Dropbox folder path where finished images are stored. All images in this folder will show as blurred previews.</div>
       </div>
-      <button type="submit" class="btn btn-primary" id="submitBtn">Create Delivery</button>
+
+      <div class="field">
+        <label>Or: Manual Preview URLs <span class="hint">— one per line (if not using Dropbox)</span></label>
+        <textarea id="previewImages" placeholder="https://example.com/preview1.jpg&#10;https://example.com/preview2.jpg"></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="submitBtn">
+        Create Delivery
+      </button>
     </form>
+
     <div class="result" id="result">
       <h3 id="resultTitle"></h3>
       <div class="url" id="resultUrl"></div>
@@ -91,6 +107,7 @@
       <div class="copied" id="copiedMsg">Copied to clipboard!</div>
     </div>
   </div>
+
   <div class="card">
     <h2>Recent Deliveries</h2>
     <div id="recentList" class="recent">
@@ -98,17 +115,24 @@
     </div>
   </div>
 </div>
+
 <div class="footer">Clipping Path Center &middot; Secure File Delivery</div>
+
 <script>
+  // Load saved admin key from localStorage
   const savedKey = localStorage.getItem('cpc_admin_key');
   if (savedKey) document.getElementById('adminKey').value = savedKey;
+
   function toggleKey() {
     const input = document.getElementById('adminKey');
     input.type = input.type === 'password' ? 'text' : 'password';
   }
+
   const recentDeliveries = [];
+
   document.getElementById('deliveryForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+
     const btn = document.getElementById('submitBtn');
     const result = document.getElementById('result');
     const adminKey = document.getElementById('adminKey').value.trim();
@@ -116,30 +140,46 @@
     const downloadLink = document.getElementById('downloadLink').value.trim();
     const clientName = document.getElementById('clientName').value.trim();
     const projectName = document.getElementById('projectName').value.trim();
+    const dropboxFolder = document.getElementById('dropboxFolder').value.trim();
     const previewText = document.getElementById('previewImages').value.trim();
     const previewImages = previewText ? previewText.split('\n').map(u => u.trim()).filter(u => u) : [];
+
+    // Save admin key
     localStorage.setItem('cpc_admin_key', adminKey);
+
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> Creating...';
     result.style.display = 'none';
+
+    const bodyData = { invoiceId, downloadLink, clientName, projectName };
+    if (dropboxFolder) bodyData.dropboxFolder = dropboxFolder;
+    if (previewImages.length > 0) bodyData.previewImages = previewImages;
+
     try {
       const res = await fetch('/api/create-delivery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
-        body: JSON.stringify({ invoiceId, downloadLink, previewImages, clientName, projectName })
+        body: JSON.stringify(bodyData)
       });
+
       const data = await res.json();
+
       if (res.ok && data.success) {
         result.className = 'result';
         document.getElementById('resultTitle').textContent = 'Delivery created successfully!';
         document.getElementById('resultUrl').textContent = data.clientPageUrl;
         result.style.display = 'block';
+
+        // Add to recent
         recentDeliveries.unshift({ projectName: projectName || invoiceId, clientName, url: data.clientPageUrl });
         renderRecent();
+
+        // Clear form fields (keep admin key)
         document.getElementById('invoiceId').value = '';
         document.getElementById('downloadLink').value = '';
         document.getElementById('clientName').value = '';
         document.getElementById('projectName').value = '';
+        document.getElementById('dropboxFolder').value = '';
         document.getElementById('previewImages').value = '';
       } else {
         result.className = 'result error';
@@ -153,9 +193,11 @@
       document.getElementById('resultUrl').textContent = err.message;
       result.style.display = 'block';
     }
+
     btn.disabled = false;
     btn.innerHTML = 'Create Delivery';
   });
+
   function copyUrl() {
     const url = document.getElementById('resultUrl').textContent;
     navigator.clipboard.writeText(url).then(() => {
@@ -164,18 +206,24 @@
       setTimeout(() => msg.style.display = 'none', 2000);
     });
   }
+
   function renderRecent() {
     const list = document.getElementById('recentList');
     if (recentDeliveries.length === 0) {
       list.innerHTML = '<div class="empty">No deliveries created yet in this session</div>';
       return;
     }
-    list.innerHTML = recentDeliveries.map(d =>
-      '<div class="recent-item"><div><span class="project">' + esc(d.projectName) + '</span>' +
-      (d.clientName ? '<br><span class="client">' + esc(d.clientName) + '</span>' : '') +
-      '</div><a href="' + esc(d.url) + '" target="_blank">Open \u2192</a></div>'
-    ).join('');
+    list.innerHTML = recentDeliveries.map(d => `
+      <div class="recent-item">
+        <div>
+          <span class="project">${esc(d.projectName)}</span>
+          ${d.clientName ? '<br><span class="client">' + esc(d.clientName) + '</span>' : ''}
+        </div>
+        <a href="${esc(d.url)}" target="_blank">Open &rarr;</a>
+      </div>
+    `).join('');
   }
+
   function esc(s) {
     const d = document.createElement('div');
     d.textContent = s;
