@@ -4,24 +4,47 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CPC File Delivery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #1a1a2e; min-height: 100vh; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: #0a0f0d; color: #f4f7f5; min-height: 100vh;
+    }
 
     .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
 
     /* Header */
-    .header { text-align: center; margin-bottom: 32px; }
-    .header h1 { font-size: 22px; font-weight: 700; color: #1a1a2e; }
-    .header p { font-size: 14px; color: #6b7280; margin-top: 4px; }
+    .header {
+      display: flex; align-items: center; justify-content: center;
+      gap: 14px; margin-bottom: 36px; padding: 20px 0;
+      border-bottom: 1px solid rgba(43, 184, 140, 0.15);
+    }
+    .header img { height: 44px; }
+    .header-text h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px; font-weight: 700; color: #f4f7f5;
+      letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .header-text p {
+      font-size: 12px; color: #2bb88c; text-transform: uppercase;
+      letter-spacing: 1.5px; font-weight: 500;
+    }
 
     /* Two-column layout */
     .layout { display: grid; grid-template-columns: 1fr 380px; gap: 32px; align-items: start; }
 
     /* Left: Image grid */
-    .images-panel { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-    .images-panel h2 { font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 16px; }
-    .image-count { font-size: 13px; color: #6b7280; font-weight: 400; }
+    .images-panel {
+      background: #141a17; border-radius: 12px; padding: 24px;
+      border: 1px solid rgba(43, 184, 140, 0.1);
+    }
+    .images-panel h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px; font-weight: 600; color: #f4f7f5; margin-bottom: 16px;
+    }
+    .image-count { font-size: 13px; color: #7a8a82; font-weight: 400; }
 
     .image-grid {
       display: grid;
@@ -33,87 +56,115 @@
       aspect-ratio: 1;
       object-fit: cover;
       border-radius: 6px;
-      border: 1px solid #e5e7eb;
-      background: #f3f4f6;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: #1a221e;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .image-grid img:hover {
+      transform: scale(1.03);
+      border-color: rgba(43, 184, 140, 0.3);
     }
 
     .loading-previews {
       display: flex; align-items: center; justify-content: center;
-      gap: 10px; padding: 48px 0; color: #6b7280; font-size: 14px;
+      gap: 10px; padding: 48px 0; color: #7a8a82; font-size: 14px;
     }
     .spinner {
-      width: 20px; height: 20px; border: 2px solid #e5e7eb;
-      border-top-color: #3b82f6; border-radius: 50%;
+      width: 20px; height: 20px; border: 2px solid rgba(43, 184, 140, 0.2);
+      border-top-color: #2bb88c; border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    .no-previews { text-align: center; padding: 48px 0; color: #9ca3af; font-size: 14px; }
+    .no-previews { text-align: center; padding: 48px 0; color: #5a6a62; font-size: 14px; }
 
     /* Right: Payment panel */
     .payment-panel {
-      background: #fff; border-radius: 12px; padding: 28px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      background: #141a17; border-radius: 12px; padding: 28px;
+      border: 1px solid rgba(43, 184, 140, 0.1);
       position: sticky; top: 24px;
     }
     .project-info { margin-bottom: 24px; }
-    .project-info .label { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-    .project-info .value { font-size: 15px; font-weight: 500; color: #1a1a2e; margin-bottom: 14px; }
+    .project-info .label {
+      font-size: 11px; color: #5a6a62; text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 4px;
+    }
+    .project-info .value {
+      font-size: 15px; font-weight: 500; color: #f4f7f5; margin-bottom: 16px;
+    }
 
     .amount-box {
-      background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;
-      padding: 16px; text-align: center; margin-bottom: 24px;
+      background: rgba(43, 184, 140, 0.08); border: 1px solid rgba(43, 184, 140, 0.2);
+      border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 24px;
     }
-    .amount-box .amount-label { font-size: 12px; color: #0369a1; text-transform: uppercase; letter-spacing: 0.5px; }
-    .amount-box .amount-value { font-size: 28px; font-weight: 700; color: #0c4a6e; margin-top: 4px; }
+    .amount-box .amount-label {
+      font-size: 11px; color: #2bb88c; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .amount-box .amount-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 28px; font-weight: 700; color: #35d6a4; margin-top: 4px;
+    }
 
     .pay-btn {
       display: block; width: 100%; padding: 14px;
-      background: #2563eb; color: #fff; border: none; border-radius: 8px;
+      background: #2bb88c; color: #0a0f0d; border: none; border-radius: 8px;
+      font-family: 'Inter', sans-serif;
       font-size: 15px; font-weight: 600; cursor: pointer;
       text-align: center; text-decoration: none; transition: background 0.2s;
     }
-    .pay-btn:hover { background: #1d4ed8; }
+    .pay-btn:hover { background: #35d6a4; }
 
     .status-badge {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 500;
       margin-bottom: 20px;
     }
-    .status-badge.unpaid { background: #fef3c7; color: #92400e; }
-    .status-badge.paid { background: #d1fae5; color: #065f46; }
+    .status-badge.unpaid { background: rgba(245, 158, 11, 0.12); color: #f5b731; }
+    .status-badge.paid { background: rgba(43, 184, 140, 0.12); color: #35d6a4; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; }
-    .status-badge.unpaid .status-dot { background: #f59e0b; }
-    .status-badge.paid .status-dot { background: #10b981; }
+    .status-badge.unpaid .status-dot { background: #f5b731; }
+    .status-badge.paid .status-dot { background: #35d6a4; }
 
     /* Download section */
     .download-section {
-      margin-top: 20px; padding: 20px; background: #ecfdf5;
-      border: 1px solid #a7f3d0; border-radius: 8px; text-align: center;
+      margin-top: 20px; padding: 20px;
+      background: rgba(43, 184, 140, 0.08); border: 1px solid rgba(43, 184, 140, 0.2);
+      border-radius: 8px; text-align: center;
     }
-    .download-section p { font-size: 14px; color: #065f46; margin-bottom: 12px; }
+    .download-section p { font-size: 14px; color: #35d6a4; margin-bottom: 12px; }
     .download-btn {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 12px 24px; background: #059669; color: #fff;
+      padding: 12px 24px; background: #2bb88c; color: #0a0f0d;
       border: none; border-radius: 8px; font-size: 15px; font-weight: 600;
       cursor: pointer; text-decoration: none; transition: background 0.2s;
     }
-    .download-btn:hover { background: #047857; }
+    .download-btn:hover { background: #35d6a4; }
 
-    .polling-note { font-size: 12px; color: #9ca3af; text-align: center; margin-top: 12px; }
+    .polling-note { font-size: 12px; color: #5a6a62; text-align: center; margin-top: 12px; }
 
     /* Error */
-    .error-box { max-width: 500px; margin: 80px auto; text-align: center; padding: 40px; background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-    .error-box h2 { color: #dc2626; margin-bottom: 8px; }
+    .error-box {
+      max-width: 500px; margin: 80px auto; text-align: center; padding: 40px;
+      background: #141a17; border-radius: 12px;
+      border: 1px solid rgba(43, 184, 140, 0.1);
+    }
+    .error-box h2 { color: #e05252; margin-bottom: 8px; font-family: 'Space Grotesk', sans-serif; }
+    .error-box p { color: #7a8a82; }
 
     /* Footer */
-    .footer { text-align: center; margin-top: 40px; padding: 20px 0; color: #9ca3af; font-size: 12px; }
+    .footer {
+      text-align: center; margin-top: 40px; padding: 20px 0;
+      color: #3a4a42; font-size: 12px;
+      border-top: 1px solid rgba(43, 184, 140, 0.08);
+    }
+    .footer a { color: #2bb88c; text-decoration: none; }
 
     /* Responsive */
     @media (max-width: 800px) {
       .layout { grid-template-columns: 1fr; }
       .payment-panel { position: static; order: -1; }
       .image-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+      .header { flex-direction: column; gap: 8px; }
     }
 
     .hidden { display: none; }
@@ -122,8 +173,10 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>Clipping Path Center</h1>
-      <p>File Delivery</p>
+      <img src="https://www.clippingpathcenter.com/files/uploads/2026/09/Logo-Clipping-Path-Center.png" alt="Clipping Path Center">
+      <div class="header-text">
+        <p>File Delivery</p>
+      </div>
     </div>
 
     <div id="error-view" class="error-box hidden">
@@ -146,9 +199,9 @@
       <div class="payment-panel">
         <div class="project-info">
           <div class="label">Client</div>
-          <div class="value" id="client-name">—</div>
+          <div class="value" id="client-name">&mdash;</div>
           <div class="label">Project</div>
-          <div class="value" id="project-name">—</div>
+          <div class="value" id="project-name">&mdash;</div>
         </div>
 
         <div id="status-unpaid" class="status-badge unpaid hidden">
@@ -166,7 +219,7 @@
         <a id="pay-button" href="#" target="_blank" class="pay-btn hidden">Pay Now</a>
 
         <div id="download-section" class="download-section hidden">
-          <p>Payment received — your files are ready!</p>
+          <p>Payment received &mdash; your files are ready!</p>
           <a id="download-btn" href="#" target="_blank" class="download-btn">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
             Download Files
@@ -177,12 +230,14 @@
       </div>
     </div>
 
-    <div class="footer">Clipping Path Center &copy; 2024</div>
+    <div class="footer">
+      <a href="https://www.clippingpathcenter.com">clippingpathcenter.com</a>
+    </div>
   </div>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const invoiceId = params.get('invoice');
+    var params = new URLSearchParams(window.location.search);
+    var invoiceId = params.get('invoice');
 
     if (!invoiceId) {
       document.getElementById('error-view').classList.remove('hidden');
@@ -191,16 +246,16 @@
       checkStatus();
     }
 
-    let pollingInterval;
+    var pollingInterval;
 
     async function checkStatus() {
       try {
-        const res = await fetch('/api/check-status?invoice=' + invoiceId);
+        var res = await fetch('/api/check-status?invoice=' + invoiceId);
         if (!res.ok) {
           document.getElementById('error-view').classList.remove('hidden');
           return;
         }
-        const data = await res.json();
+        var data = await res.json();
         renderPage(data);
       } catch (err) {
         document.getElementById('error-view').classList.remove('hidden');
@@ -214,7 +269,6 @@
       if (data.clientName) document.getElementById('client-name').textContent = data.clientName;
       if (data.projectName) document.getElementById('project-name').textContent = data.projectName;
 
-      // Load previews
       if (data.hasDropboxPreviews) {
         loadDropboxPreviews();
       } else if (data.previewImages && data.previewImages.length > 0) {
