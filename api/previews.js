@@ -60,7 +60,7 @@ module.exports = async function handler(req, res) {
       const entries = batch.map((f) => ({
         path: f.path_lower,
         format: "jpeg",
-        size: "w256h256",
+        size: "w128h128",
       }));
 
       const thumbRes = await fetch("https://content.dropboxapi.com/2/files/get_thumbnail_batch", {
