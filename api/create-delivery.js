@@ -10,8 +10,14 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const { invoiceId, downloadLink, previewImages, clientName, projectName } =
-    req.body;
+  const {
+    invoiceId,
+    downloadLink,
+    dropboxFolder,
+    previewImages,
+    clientName,
+    projectName,
+  } = req.body;
 
   if (!invoiceId || !downloadLink) {
     return res
@@ -19,17 +25,25 @@ module.exports = async function handler(req, res) {
       .json({ error: "invoiceId and downloadLink are required" });
   }
 
+  // Build metadata object
+  const metadata = {
+    downloadLink,
+    clientName: clientName || "",
+    projectName: projectName || "",
+    cpc_delivery: "true",
+  };
+
+  // Support both Dropbox folder (auto-previews) and manual preview URLs
+  if (dropboxFolder) {
+    metadata.dropboxFolder = dropboxFolder;
+  }
+  if (previewImages && previewImages.length > 0) {
+    metadata.previewImages = JSON.stringify(previewImages);
+  }
+
   // Store delivery data in the Stripe invoice metadata (no DB needed)
   try {
-    await stripe.invoices.update(invoiceId, {
-      metadata: {
-        downloadLink,
-        previewImages: JSON.stringify(previewImages || []),
-        clientName: clientName || "",
-        projectName: projectName || "",
-        cpc_delivery: "true",
-      },
-    });
+    await stripe.invoices.update(invoiceId, { metadata });
   } catch (err) {
     return res
       .status(400)
